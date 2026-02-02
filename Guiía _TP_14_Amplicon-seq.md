@@ -80,6 +80,60 @@ Este archivo contiene las anotaciones génicas y transcriptómicas utilizadas po
 
 ---
 
+DISCLAIMER:
+
+## Control de calidad (QC) de lecturas ONT (paso previo al análisis)
+
+Antes de iniciar cualquier análisis de datos de secuenciación, es fundamental realizar un **control de calidad (Quality Control, QC)** de las lecturas crudas.
+
+En el caso de datos de **Oxford Nanopore Technologies (ONT)**, el QC suele enfocarse principalmente en:
+
+- **Distribución de longitudes de las lecturas**
+- **Calidad promedio por lectura (Q-score)**
+- Identificación de lecturas truncadas o artefactos
+
+Herramientas comúnmente utilizadas para este paso incluyen, por ejemplo, `NanoPlot`, `NanoQC` o herramientas similares.
+
+### Ejemplos de distribuciones de longitudes
+
+A continuación se muestran ejemplos ilustrativos de histogramas de longitudes de lecturas ONT:
+
+#### Ejemplo 1: muchas lecturas cortas
+Este patrón suele indicar:
+- fragmentación del cDNA
+- problemas en la preparación de la biblioteca
+- reads incompletas
+
+
+::contentReference[oaicite:0]{index=0}
+
+
+#### Ejemplo 2: lecturas del tamaño esperado
+Este patrón es el esperado para un experimento de amplicon-seq bien controlado, donde la mayoría de las lecturas tienen una longitud cercana al tamaño del amplicón.
+
+
+::contentReference[oaicite:1]{index=1}
+
+
+### Filtrado por calidad y longitud
+
+En un pipeline completo, luego del QC se puede aplicar un **filtrado de lecturas**, por ejemplo:
+
+- eliminar lecturas por debajo de un Q-score mínimo
+- eliminar lecturas demasiado cortas o demasiado largas respecto al tamaño esperado del amplicón
+
+Este paso permite mejorar la calidad del alineamiento y la detección de isoformas.
+
+### Nota para este trabajo práctico
+
+En este TP **no se realizará el paso de QC ni filtrado**, ya que estos conceptos y herramientas fueron abordados previamente en el TP de **cDNA-seq**.
+
+Para este ejercicio se trabajará directamente con lecturas ya seleccionadas, con el objetivo de focalizarse en:
+
+- alineamiento contra el genoma
+- detección de isoformas
+- comparación entre muestras
+
 
 
 ## 5. Alineamiento de lecturas contra el genoma
@@ -166,11 +220,7 @@ bamToBed -bed12 -i sample_A.sorted.bam > sample_A.bed
 Corrige los alineamientos utilizando anotaciones conocidas:
 
 ```bash
-flair correct \
-  -q sample_A.bed \
-  -g ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa \
-  -f ref/Homo_sapiens.GRCh38.115.gtf \
-  --output resultados/correct/sample_A
+flair correct --query sample_A.bed --genome ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa --gtf ref/Homo_sapiens.GRCh38.115.gtf --output resultados/correct/sample_A
 ```
 
 ### FLAIR collapse
@@ -178,13 +228,7 @@ flair correct \
 Agrupa lecturas corregidas en isoformas únicas:
 
 ```bash
-flair collapse \
-  --gtf ref/Homo_sapiens.GRCh38.115.gtf \
-  -g ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa \
-  -q flair.all_corrected.bed \
-  -r reads/sample_A.fastq \
-  --output resultados/collapse/sample_A \
-  --stringent --check_splice --generate_map
+flair collapse -g ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa --gtf ref/Homo_sapiens.GRCh38.115.gtf -q flair.all_corrected.bed -r reads/sample_A.fastq --output resultados/collapse/sample_A --stringent --check_splice --generate_map
 ```
 
 ### FLAIR quantify
@@ -192,10 +236,7 @@ flair collapse \
 Cuantifica la abundancia de isoformas:
 
 ```bash
-flair quantify \
-  -r reads-manifest.tsv \
-  -i flair.collapsed.isoforms.fa \
-  --isoform_bed flair.collapsed.isoforms.bed
+flair quantify -r reads-manifest.tsv -i flair.collapsed.isoforms.fa --isoform_bed flair.collapsed.isoforms.bed
 ```
 
 ---
@@ -208,7 +249,7 @@ Los archivos `*.sorted.bam`, `*.bai`, `*.bed` y `*.gtf` pueden cargarse en **IGV
 * Observar estructuras de exones
 * Comparar isoformas entre Sample A y Sample B
 
-Se recomienda navegar a la región del gen **FMR1** y discutir diferencias observadas entre las muestras.
+Se recomienda navegar a la región del gen ***FMR1*** y discutir diferencias observadas entre las muestras.
 
 ---
 
